@@ -830,7 +830,7 @@ def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shea
         xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T)
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T,wh_thr = 6,area_thr=0.6)
         targets = targets[i]
         targets[:, 1:5] = xy[i]
 

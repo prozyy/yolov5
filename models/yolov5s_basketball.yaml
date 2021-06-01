@@ -1,13 +1,13 @@
 # parameters
 nc: 1  # number of classes
-depth_multiple: 0.33  # model depth multiple
+depth_multiple: 0.67  # model depth multiple
 width_multiple: 0.50  # layer channel multiple
 
 # anchors
 anchors:
-  - [10,10, 20,20, 30,30]  # P3/8
-  - [40,40, 60,60, 80,80]  # P4/16
-  - [100,100, 150,150, 200,200]  # P5/32
+  - [10,10, 14,14, 18,18]  # P3/8
+  - [22,22, 30,30, 38,38]  # P4/16
+  - [46,46, 62,62, 78,78]  # P5/32
 # anchors:
 #   - [8,15,   15,34, 33,23]       # P3/8 80,209
 #   - [34,93,  62,45, 62,108]      # P4/16
