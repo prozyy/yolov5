@@ -15,7 +15,8 @@ def autopad(k, p=None):  # kernel, padding
 class ConvT(nn.Module):
     def __init__(self,c1,c2,k,s,p,bias):
         super(ConvT, self).__init__()
-        self.convT = nn.ConvTranspose2d(c1,c2,k,s,p,bias = bias)
+        # self.convT = nn.ConvTranspose2d(c1,c2,k,s,p,bias = bias)
+        self.convT = nn.ConvTranspose2d(c1,c2,k,s,p)
         self.bn = nn.BatchNorm2d(c2)
     def forward(self,x):
         print(x.size())
