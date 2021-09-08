@@ -40,8 +40,6 @@ class Detect(nn.Module):
         self.training |= self.export
         for i in range(self.nl):
             # x[i] = self.m[i](x[i])  # conv
-            # import numpy as np
-            # np.save(str(i),x[i].cpu().detach().numpy())
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
@@ -240,6 +238,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
         if m is nn.Conv2d:
             print("nn.Conv2d args:",args)
+        if m is ConvT:
+            print("ConvT args:",args)
 
         m_ = nn.Sequential(*[m(*args) for _ in range(n)]) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
