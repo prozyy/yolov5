@@ -166,7 +166,7 @@ class LoadImages:  # for inference
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, 'Image Not Found ' + path
-            print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
+            print('image %g/%g %s: ' % (self.count, self.nf, path))
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
@@ -772,6 +772,7 @@ def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shea
     a = random.uniform(-degrees, degrees)
     # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
     s = random.uniform(1 - scale, 1 + scale)
+    # s = random.uniform(0.4,0.8)
     # s = 2 ** random.uniform(-scale, scale)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
@@ -830,7 +831,7 @@ def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shea
         xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T,wh_thr = 6,area_thr=0.6)
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T,area_thr=0.6)
         targets = targets[i]
         targets[:, 1:5] = xy[i]
 
