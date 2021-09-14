@@ -547,9 +547,10 @@ def build_targets(p, targets, model):
     det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
     na, nt = det.na, targets.shape[0]  # number of anchors, targets
     tcls, tbox, indices, anch = [], [], [], []
-    gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
+    gain = torch.ones(8, device=targets.device)  # normalized to gridspace gain
     ai = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
-    targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
+    gti = torch.arange(nt, device=targets.device).float().view(1, nt).repeat(na, 1)  # same as .repeat_interleave(nt)
+    targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None],gti[:,:,None]), 2)  # append anchor indices
 
     g = 0.5  # bias
     off = torch.tensor([[0, 0],
@@ -557,6 +558,8 @@ def build_targets(p, targets, model):
                         # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
                         ], device=targets.device).float() * g  # offsets
 
+    iouScoreList = []
+    GTIndexList = []
     for i in range(det.nl):
         anchors = det.anchors[i]
         gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
@@ -589,12 +592,43 @@ def build_targets(p, targets, model):
         gij = (gxy - offsets).long()
         gi, gj = gij.T  # grid xy indices
 
-        # Append
         a = t[:, 6].long()  # anchor indices
+
+        if model.hyp['atss']:
+            ps = p[i][b,a,gj,gi]
+            pxy = ps[:,:2].sigmoid()*2.- 0.5
+            pwh = (ps[:,2:4].sigmoid()*2)**2*anchors[a]
+            pbox = torch.cat((pxy, pwh),1)
+            gt_box = torch.cat((gxy-gij,gwh),1)
+            iouScore = bbox_iou(pbox.t(), gt_box, x1y1x2y2=False, GIoU=False)
+
+            iouScoreList.append(iouScore)
+            GTIndexList.append(t[:, 7].long())
+
+        # Append
         indices.append((b, a, gj, gi))  # image, anchor, grid indices
         tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
         anch.append(anchors[a])  # anchors
         tcls.append(c)  # class
+
+    if model.hyp['atss']:
+        iouScore = torch.cat(iouScoreList,0)
+        GTIndex = torch.cat(GTIndexList,0)
+        chooseIndex = torch.zeros_like(GTIndex)
+        for i in range(nt):
+            Score = iouScore[GTIndex==i]
+            std, mean = torch.std_mean(Score, unbiased=False)
+            chooseIndex_i = torch.logical_and(iouScore >= mean, GTIndex==i)
+            chooseIndex = torch.logical_or(chooseIndex_i,chooseIndex)
+        
+        startIndex = 0
+        for i in range(len(tcls)):
+            chooseIndex_i = chooseIndex[startIndex:(startIndex + tcls[i].shape[0])]
+            startIndex += tcls[i].shape[0]
+            tcls[i] = tcls[i][chooseIndex_i]
+            tbox[i] = tbox[i][chooseIndex_i]
+            indices[i] = (indices[i][0][chooseIndex_i],indices[i][1][chooseIndex_i],indices[i][2][chooseIndex_i],indices[i][3][chooseIndex_i])
+            anch[i] = anch[i][chooseIndex_i]
 
     return tcls, tbox, indices, anch
 
