@@ -6,6 +6,18 @@ from copy import deepcopy
 from commonConvert import Conv, ConvT, Bottleneck, SPP, Focus, BottleneckCSP,Concat
 import numpy as np
 
+def initialize_weights(model):
+    for m in model.modules():
+        t = type(m)
+        if t is nn.Conv2d:
+            pass  # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        elif t is nn.BatchNorm2d:
+            m.eps = 1e-3
+            m.momentum = 0.03
+        elif t in [nn.LeakyReLU, nn.ReLU, nn.ReLU6]:
+            m.inplace = True
+
+
 def make_divisible(x, divisor):
     # Returns x evenly divisible by divisor
     return math.ceil(x / divisor) * divisor
@@ -86,6 +98,7 @@ class YOLOV5(nn.Module):
             print('Overriding model.yaml nc=%g with nc=%g' % (self.yaml['nc'], nc))
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist, ch_out
+        initialize_weights(self)
 
     def forward(self,x):
         y, dt = [], []  # outputs

@@ -52,7 +52,8 @@ def get_flops(net, input_shape=(1, 3, 256, 192)):
 
 from yolov5 import YOLOV5
 
-net = YOLOV5(cfg = "yolov5s_basketball_test.yaml")
+net = YOLOV5(cfg = "yolov5s_hand.yaml")
+# net = YOLOV5(cfg = "yolov5s_basketball_test.yaml")
 # pretrained_dict = torch.load('/home/pytorch2caffe/yolov5/best.pkl')
 # pretrained_dict = np.load("weights.npy")
 # import pickle
@@ -68,7 +69,7 @@ for i,(k,v) in enumerate(pretrained_dict.items()):
 
 net.load_state_dict(state)
 net.eval()
-input_shape=(1, 3, 640, 640)
+input_shape=(1, 3, 384, 480)
 # net_flops = get_flops(net, input_shape)
 # print("The Model's Total FLOPS is : {:.6f} G FLOPS".format(net_flops))
 net.eval()
@@ -80,8 +81,8 @@ print('Converting...')
 text_net, binary_weights = ConvertModel_caffe(net, input_shape, softmax=False, use_cuda=use_cuda, save_graph=True)
 
 import google.protobuf.text_format
-with open('yolov5.prototxt', 'w') as f:
+with open('yolov5_hand.prototxt', 'w') as f:
     f.write(google.protobuf.text_format.MessageToString(text_net))
-with open('yolov5.caffemodel', 'w') as f:
+with open('yolov5_hand.caffemodel', 'w') as f:
     f.write(binary_weights.SerializeToString())
 
